@@ -3619,7 +3619,7 @@ case 'toanime':
 
       // Generate anime version using Lolhuman API or Caliph API as a fallback
       try {
-        const anime = `https://api.lolhuman.xyz/api/imagetoanime?apikey=GataDiosV2&img=${image}`;
+        const anime = `https://api.lolhuman.xyz/api/imagetoanime?apikey=ExyV&img=${image}`;
         await gss.sendMedia(m.chat, anime, 'error.jpg', null, m);
       } catch (i) {
         // If Lolhuman API fails, try Caliph API as a fallback
@@ -6273,7 +6273,7 @@ case 'nh': {
 
 
     // Fetch data from the API
-    let response = await fetch(`https://api.lolhuman.xyz/api/nhentai/${queryText}?apikey=GataDiosV2`);
+    let response = await fetch(`https://api.lolhuman.xyz/api/nhentai/${queryText}?apikey=ExyV`);
     let data = await response.json();
 
     if (data.status === 200) {

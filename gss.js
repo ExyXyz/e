@@ -4169,21 +4169,22 @@ case 'smeme': case 'stext': case 'stickermeme': case 'stickertext': {
   if (isBan) return m.reply(mess.banned);
   if (isBanChat) return m.reply(mess.bangc);
 
-  // Check if there's a text input and if an image is attached or replied to
-  if (!text || !/image/.test(mime)) return m.reply(`Kirim gambar atau reply gambar pake ${prefix + command} dengan teks yang diinginkan. Untuk teks bawah, pisahkan dengan '|'. Contoh: ${prefix + command} Teks Atas|Teks Bawah`);
+  // Check if there's a text input and if an image/video is attached or replied to
+  if (!text || (!/image/.test(mime) && !/video/.test(mime))) return m.reply(`Kirim gambar/video atau reply gambar/video pake ${prefix + command} dengan teks yang diinginkan. Untuk teks bawah, pisahkan dengan '|'. Contoh: ${prefix + command} Teks Atas|Teks Bawah`);
 
   let [textTop, textBottom] = text.split('|');
-  if (!textBottom) {
-    textBottom = '%20'; // Set to URL encoded space if bottom text is not provided
-  }
+  if (!textTop) textTop = '%20'; // Set to URL encoded space if top text is not provided
+  if (!textBottom) textBottom = '%20'; // Set to URL encoded space if bottom text is not provided
 
   let media = await gss.downloadMediaMessage(qmsg);
+  let randomFileName = `image_${Math.floor(Math.random() * 10000)}`;
 
   try {
-    // Upload the image to a temporary image hosting service
+    // Upload the image to a temporary image hosting service with a random filename
     let uploadedImage = await imgbbUploader({
       apiKey: '0fabf68b79d0afbc0be190fc32103ef1', // Replace with your imgbb API key
-      base64string: media.toString('base64')
+      base64string: media.toString('base64'),
+      name: randomFileName
     });
 
     let imageUrl = `https://api.lolhuman.xyz/api/stickermeme?apikey=ExyV&texttop=${encodeURIComponent(textTop)}&textbottom=${encodeURIComponent(textBottom)}&img=${uploadedImage.url}`;
@@ -4198,14 +4199,28 @@ case 'smeme': case 'stext': case 'stickermeme': case 'stickertext': {
     let arrayBuffer = await response.arrayBuffer();
     let buffer = Buffer.from(arrayBuffer);
 
-    let encmedia = await gss.sendImageAsSticker(m.chat, buffer, m, { packname: global.packname, author: global.author });
-    await fs.unlinkSync(encmedia);
+    if (/image/.test(mime)) {
+      let encmedia = await gss.sendImageAsSticker(m.chat, buffer, m, { packname: global.packname, author: global.author });
+      await fs.unlinkSync(encmedia);
+    } else if (/video/.test(mime)) {
+      let encmedia = await gss.sendVideoAsSticker(m.chat, buffer, m, { packname: global.packname, author: global.author });
+      await fs.unlinkSync(encmedia);
+    }
   } catch (error) {
     console.error(error);
-    m.reply('Gagal membuat sticker meme, silakan coba lagi.');
+
+    // Check if the error is related to imgbbUploader
+    if (error.message.includes('Unexpected token')) {
+      m.reply('Gagal mengupload gambar ke imgbb. Silakan coba lagi nanti.');
+    } else if (error.message.includes('HTTP error')) {
+      m.reply(`Gagal menghubungi API sticker meme: ${error.message}`);
+    } else {
+      m.reply('Gagal membuat sticker meme, silakan coba lagi.');
+    }
   }
 }
 break;
+
 
 case 'whatanime': case 'animeapa': case 'wanime': {
   if (isBan) return m.reply(mess.banned);

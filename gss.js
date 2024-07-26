@@ -22,6 +22,7 @@ const ytdl = require('@distube/ytdl-core');
 const util = require('util')
 const truecallerjs = require("truecallerjs");
 const ffmpeg = require('fluent-ffmpeg');
+const imgbbUploader = require('imgbb-uploader');
 const chalk = require('chalk')
 const { exec, spawn, execSync } = require("child_process")
 const axios = require('axios')
@@ -4164,6 +4165,84 @@ case 'sticker': case 's': case 'stickergif': case 'sgif': {
 }
 break;
 
+case 'smeme': case 'stext': case 'stickermeme': case 'stickertext': {
+  if (isBan) return m.reply(mess.banned);
+  if (isBanChat) return m.reply(mess.bangc);
+
+  // Check if there's a text input and if an image is attached or replied to
+  if (!text || !/image/.test(mime)) return m.reply(`Kirim gambar atau reply gambar pake ${prefix + command} dengan teks yang diinginkan. Untuk teks bawah, pisahkan dengan '|'. Contoh: ${prefix + command} Teks Atas|Teks Bawah`);
+
+  let [textTop, textBottom] = text.split('|');
+  if (!textBottom) {
+    textBottom = '%20'; // Set to URL encoded space if bottom text is not provided
+  }
+
+  let media = await gss.downloadMediaMessage(qmsg);
+
+  try {
+    // Upload the image to a temporary image hosting service
+    let uploadedImage = await imgbbUploader({
+      apiKey: '0fabf68b79d0afbc0be190fc32103ef1', // Replace with your imgbb API key
+      base64string: media.toString('base64')
+    });
+
+    let imageUrl = `https://api.lolhuman.xyz/api/stickermeme?apikey=ExyV&texttop=${encodeURIComponent(textTop)}&textbottom=${encodeURIComponent(textBottom)}&img=${uploadedImage.url}`;
+
+    // Log the request URL for debugging
+    console.log(`Request URL: ${imageUrl}`);
+
+    let response = await fetch(imageUrl);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    // Convert the arrayBuffer to Buffer
+    let arrayBuffer = await response.arrayBuffer();
+    let buffer = Buffer.from(arrayBuffer);
+
+    let encmedia = await gss.sendImageAsSticker(m.chat, buffer, m, { packname: global.packname, author: global.author });
+    await fs.unlinkSync(encmedia);
+  } catch (error) {
+    console.error(error);
+    m.reply('Gagal membuat sticker meme, silakan coba lagi.');
+  }
+}
+break;
+
+case 'whatanime': case 'animeapa': case 'wanime': {
+  if (isBan) return m.reply(mess.banned);
+  if (isBanChat) return m.reply(mess.bangc);
+
+  if (!/image/.test(mime)) return m.reply(`Kirim gambar atau reply gambar pake ${prefix + command}`);
+
+  let media = await gss.downloadMediaMessage(qmsg);
+
+  try {
+    let uploadedImage = await imgbbUploader({
+      apiKey: '0fabf68b79d0afbc0be190fc32103ef1',
+      base64string: media.toString('base64')
+    });
+
+    let imageUrl = `https://api.lolhuman.xyz/api/wait?apikey=ExyV&img=${uploadedImage.url}`;
+
+    console.log(`Request URL: ${imageUrl}`);
+
+    let response = await fetch(imageUrl);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    
+    let result = await response.json();
+    if (result.status !== 200) throw new Error(`API error! message: ${result.message}`);
+
+    let videoUrl = result.result.video;
+    let videoResponse = await axios.get(videoUrl, { responseType: 'arraybuffer' });
+    let videoBuffer = Buffer.from(videoResponse.data);
+
+    let caption = `*Judul:* ${result.result.title_romaji}\n*Episode:* ${result.result.episode}\n*Menit:* ${result.result.at}`;
+    await gss.sendVideo(m.chat, videoBuffer, caption, m);
+  } catch (error) {
+    console.error(error);
+    m.reply('Gagal mengidentifikasi anime atau mengunduh video, silakan coba lagi.');
+  }
+}
+break;
 
 
 case 'pinterest':

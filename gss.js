@@ -780,7 +780,7 @@ during ${clockString(new Date - user.afkTime)}`)
         }
         
         const cmdAi = ["Ai", "Bug", "Report", "Gpt", "Dalle"];
-const cmdTool = ["Tempmail", "Checkmail", "Info", "ssweb", "Trt", "Tts"];
+const cmdTool = ["Tempmail", "Checkmail", "Info", "ssweb", "Trt", "Whatanime", "Sticker", "Stickermeme", "Tts"];
 const cmdGrup = ["LinkGroup", "Setppgc", "Setname", "Setdesc", "Group", "Gcsetting", "Welcome", "Left", "SetWelcome", "SetLeft", "Editinfo", "Add", "Kick", "HideTag", "Nsfw", "Tagall", "Totag", "Tagadmin", "AntiLink", "AntiToxic", "Mute", "Promote", "Demote", "Revoke", "Poll", "Getbio"];
 const cmdDown = ["Apk", "Facebook", "Mediafire", "Nhentai", "Pinterestdl", "Gitclone", "Gdrive", "Twitter", "Instagram", "Ytmp3", "Ytmp4", "Play", "Song", "Video", "Ytmp3doc", "Tiktok", "TiktokHD"];
 const cmdSearch = ["Play", "Yts", "Imdb", "Anime", "Google", "Pinterest", "Wikimedia", "Ytsearch", "Ringtone", "Lyrics", "Neko"];
@@ -4169,33 +4169,29 @@ case 'smeme': case 'stext': case 'stickermeme': case 'stickertext': {
   if (isBan) return m.reply(mess.banned);
   if (isBanChat) return m.reply(mess.bangc);
 
-  // Check if there's a text input and if an image/video is attached or replied to
   if (!text || (!/image/.test(mime) && !/video/.test(mime))) return m.reply(`Kirim gambar/video atau reply gambar/video pake ${prefix + command} dengan teks yang diinginkan. Untuk teks bawah, pisahkan dengan '|'. Contoh: ${prefix + command} Teks Atas|Teks Bawah`);
 
   let [textTop, textBottom] = text.split('|');
-  if (!textTop) textTop = '%20'; // Set to URL encoded space if top text is not provided
-  if (!textBottom) textBottom = '%20'; // Set to URL encoded space if bottom text is not provided
+  if (!textTop) textTop = '%20'; 
+  if (!textBottom) textBottom = '%20'; 
 
   let media = await gss.downloadMediaMessage(qmsg);
   let randomFileName = `image_${Math.floor(Math.random() * 10000)}`;
 
   try {
-    // Upload the image to a temporary image hosting service with a random filename
     let uploadedImage = await imgbbUploader({
-      apiKey: '0fabf68b79d0afbc0be190fc32103ef1', // Replace with your imgbb API key
+      apiKey: '0fabf68b79d0afbc0be190fc32103ef1', 
       base64string: media.toString('base64'),
       name: randomFileName
     });
 
     let imageUrl = `https://api.lolhuman.xyz/api/stickermeme?apikey=ExyV&texttop=${encodeURIComponent(textTop)}&textbottom=${encodeURIComponent(textBottom)}&img=${uploadedImage.url}`;
 
-    // Log the request URL for debugging
     console.log(`Request URL: ${imageUrl}`);
 
     let response = await fetch(imageUrl);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
-    // Convert the arrayBuffer to Buffer
     let arrayBuffer = await response.arrayBuffer();
     let buffer = Buffer.from(arrayBuffer);
 
@@ -4317,6 +4313,46 @@ case 'pinterest':
 break;
 
 
+case 'pinterestdl':
+case 'pdl':
+case 'pindl': {
+  try {
+    if (isBan) return m.reply(mess.banned);
+    if (isBanChat) return m.reply(mess.bangc);
+    
+    let url = text.trim();
+    if (!url) {
+      throw new Error('Please provide a valid Pinterest URL');
+    }
+
+    m.reply(mess.wait);
+
+    // Fetch data from the API
+    let response = await fetch(`https://api.neoxr.eu/api/pin-v2?url=${encodeURIComponent(url)}&apikey=ExyXyz`);
+    let data = await response.json();
+
+    if (!data.status || !data.data || data.data.content.length === 0) {
+      throw new Error('No results found for the provided URL');
+    }
+
+    let content = data.data.content[0];
+    let mediaUrl = content.url;
+    let thumbnailUrl = content.thumbnail;
+
+    if (content.is_video) {
+      await gss.sendMessage(m.chat, { video: { url: mediaUrl, caption: '⭔ Media Url : ' + mediaUrl, jpegThumbnail: thumbnailUrl } }, { quoted: m });
+    } else {
+      await gss.sendMessage(m.chat, { image: { url: mediaUrl, caption: '⭔ Media Url : ' + mediaUrl, jpegThumbnail: thumbnailUrl } }, { quoted: m });
+    }
+
+    await doReact("✅");
+  } catch (error) {
+    console.error('Error during:', error);
+    m.reply(`Ada yang error: ${error.message}`);
+    await doReact("❌");
+  }
+}
+break;
 
 
 

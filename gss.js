@@ -640,7 +640,6 @@ function addHandleMessageFunction(word, userNumber, responseText) {
     if (m.text && m.text.toLowerCase().includes(word.toLowerCase())) {
       if (isBan) return m.reply(mess.banned);
       if (isBanChat) return m.reply(mess.bangc);
-      if (!m.isGroup) return m.reply('ʏᴏᴜ ᴄᴀɴ ᴜsᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴏɴʟʏ ɪɴ ɢʀᴏᴜᴘ ❌');
 
       let hiddenTeks = responseText + '\u200B'.repeat(400); 
 
@@ -650,8 +649,9 @@ function addHandleMessageFunction(word, userNumber, responseText) {
 }
 
 addHandleMessageFunction('weka', '6281291025867@s.whatsapp.net', '    𝕎𝔼𝕂𝔸 𝕁𝕆𝕄𝕆𝕂    ');
-addHandleMessageFunction('oji', '6285724223680@s.whatsapp.net', '    𝕆𝕁𝕀 ℕ𝕀𝔾𝔾𝔼ℝ𝕊    ');
-addHandleMessageFunction('Horee', '6283878300449@s.whatsapp.net', 'Yeeeeeeaaaaaaayy');
+addHandleMessageFunction('azmi', '6285724223680@s.whatsapp.net', '    \n\n    𝑨𝒁𝑴𝑰 𝑯𝑰𝑻𝑨𝑴    \n\n    ');
+addHandleMessageFunction('Horee', '6289999999999@s.whatsapp.net', 'Yeeeeeeaaaaaaayy');
+
 
 async function handleMessage(m) {
   for (let word in handleMessageFunctions) {
@@ -780,7 +780,7 @@ during ${clockString(new Date - user.afkTime)}`)
         }
         
         const cmdAi = ["Ai", "Bug", "Report", "Gpt", "Dalle"];
-const cmdTool = ["Tempmail", "Checkmail", "Info", "ssweb", "Trt", "Whatanime", "Sticker", "Stickermeme", "Tts"];
+const cmdTool = ["Tempmail", "Checkmail", "Info", "ssweb", "Trt", "Whatanime", "Sticker", "Stickermeme", "Toqr", "Tts"];
 const cmdGrup = ["LinkGroup", "Setppgc", "Setname", "Setdesc", "Group", "Gcsetting", "Welcome", "Left", "SetWelcome", "SetLeft", "Editinfo", "Add", "Kick", "HideTag", "Nsfw", "Tagall", "Totag", "Tagadmin", "AntiLink", "AntiToxic", "Mute", "Promote", "Demote", "Revoke", "Poll", "Getbio"];
 const cmdDown = ["Apk", "Facebook", "Mediafire", "Nhentai", "Pinterestdl", "Gitclone", "Gdrive", "Twitter", "Instagram", "Ytmp3", "Ytmp4", "Play", "Song", "Video", "Ytmp3doc", "Tiktok", "TiktokHD"];
 const cmdSearch = ["Play", "Yts", "Imdb", "Anime", "Google", "Pinterest", "Wikimedia", "Ytsearch", "Ringtone", "Lyrics", "Neko"];
@@ -1223,7 +1223,7 @@ break;
 }
 break;
     
-case 'toqr': {
+case 'toqr': case 'qr': {
   if (isBan) return m.reply(mess.banned);
         if (isBanChat) return m.reply(mess.bangc);
                 if (!q) return m.reply(' Please include link or text!')
@@ -1247,21 +1247,7 @@ case 'toqr': {
                 }, 10000)
             }
             break
-            
-case "readqr": {
-  if (isBan) return m.reply(mess.banned);
-        if (isBanChat) return m.reply(mess.bangc);
-try {
-mee = await gss.downloadAndSaveMediaMessage(quoted)
-mem = await TelegraPh(mee)
-const res = await fetch(`http://api.qrserver.com/v1/read-qr-code/?fileurl=${mem}`)
-const data = await res.json() 
-m.reply(util.format(data[0].symbol))
-} catch (err) {
-m.reply(`Reply Image That Has Qr`)
-}
-}
-break
+          
 
 case 'setppgroup':
             case 'setppgrup':
@@ -4165,6 +4151,31 @@ case 'sticker': case 's': case 'stickergif': case 'sgif': {
 }
 break;
 
+case 'swm': case 'stickerwm': {
+  if (isBan) return m.reply(mess.banned);
+  if (isBanChat) return m.reply(mess.bangc);
+
+  // Extract packname and author
+  let text = args.join(' ');
+  let [packname, author] = text.split('|');
+  packname = packname ? packname.trim() : global.packname;
+  author = author ? author.trim() : global.author;
+
+  if (/image/.test(mime)) {
+    let media = await gss.downloadMediaMessage(qmsg);
+    let encmedia = await gss.sendImageAsSticker(m.chat, media, m, { packname, author });
+    await fs.unlinkSync(encmedia);
+  } else if (/video/.test(mime)) {
+    if (qmsg.seconds > 11) return m.reply('Durasi maksimum nya 10 detik');
+    let media = await gss.downloadMediaMessage(qmsg);
+    let encmedia = await gss.sendVideoAsSticker(m.chat, media, m, { packname, author });
+    await fs.unlinkSync(encmedia);
+  } else {
+    m.reply(`Kirim atau Reply image + caption .swm pasang watermark dengan ".swm nama|nama" "|" dipake buat pemisah antara packname sama author`);
+  }
+}
+break;
+
 case 'smeme': case 'stext': case 'stickermeme': case 'stickertext': {
   if (isBan) return m.reply(mess.banned);
   if (isBanChat) return m.reply(mess.bangc);
@@ -4207,9 +4218,9 @@ case 'smeme': case 'stext': case 'stickermeme': case 'stickertext': {
 
     // Check if the error is related to imgbbUploader
     if (error.message.includes('Unexpected token')) {
-      m.reply('Gagal mengupload gambar ke imgbb. Silakan coba lagi nanti.');
+      m.reply('Ada yang error');
     } else if (error.message.includes('HTTP error')) {
-      m.reply(`Gagal menghubungi API sticker meme: ${error.message}`);
+      m.reply(`Ada yang error`);
     } else {
       m.reply('Gagal membuat sticker meme, silakan coba lagi.');
     }
@@ -4237,10 +4248,10 @@ case 'whatanime': case 'animeapa': case 'wanime': {
     console.log(`Request URL: ${imageUrl}`);
 
     let response = await fetch(imageUrl);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    if (!response.ok) throw new Error(`Ada yang error`);
     
     let result = await response.json();
-    if (result.status !== 200) throw new Error(`API error! message: ${result.message}`);
+    if (result.status !== 200) throw new Error(`Ada yang error`);
 
     let videoUrl = result.result.video;
     let videoResponse = await axios.get(videoUrl, { responseType: 'arraybuffer' });

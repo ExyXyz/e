@@ -75,6 +75,23 @@ let available = false;
 let autoTyping = false;
 let autoRecord = false;
 
+const cookies = [
+  { name: "SID", value: "g.a000lwiyVd6pVczHde2c-aAiHjT9EWyLjKFMYxqdjq4hGpvPFskHfgmeyKsSh8jLOf2V_NzPsgACgYKAVoSARUSFQHGX2MiRWaTbQu1vZPWcAL1colYVxoVAUF8yKrPnGnlwMR_CtjpPTlPHVFz0076" },
+  { name: "HSID", value: "AUlvurfTJCLbFdsOR" },
+  { name: "SSID", value: "AvXnnzUPrBGTa-68J" },
+  { name: "SAPISID", value: "S__QM9uLlkwsOhWd/Adb-v8qRVJ2LmUQOg" },
+  { name: "APISID", value: "UioV4a0zzjTSxaEH/AMTh79lfupParStJp" },
+  { name: "LOGIN_INFO", value: "AFmmF2swRgIhAIURhW5Mwiu27Cod4v-hVjrNF9NEDt5tY20mWj_p_rZiAiEA6kaaeghxkO7RZ5DXDvqfdA3WF1JPSLwgEm6adrJWDuA:QUQ3MjNmeWllSThDNXlWRmpYTnZuX3l6MlhNZm5yRTRYcVNLdW9FV0cxY1Q1UzJ0ZmFkb2o4T0tJQUhCNXFwTzA3Q3FFZExMLW80elc1dDhyUl9OX0NSZklveC1GZno1TVVDQl9kb0RwMHZ3ZDR0b1hCem9GTVhOYndpQjhIaTQtUkt6Q20ySWVFQkRMQXhxTDAxTjdtVnBKTy0wT0NyTmZR" },
+];
+
+const agentOptions = {
+  pipelining: 5,
+  maxRedirections: 0,
+  localAddress: "192.168.1.5",
+};
+
+const agent = ytdl.createAgent(cookies, agentOptions);
+
 const mongoDBUrl = process.env.MONGO_DB || 'mongodb+srv://mohsin:mohsin@cluster0.iauaztt.mongodb.net/?retryWrites=true&w=majority';
 
 let currentPollIndex = 0;
@@ -635,12 +652,15 @@ if (antiToxic) {
 	    
 const handleMessageFunctions = {};
 
-function addHandleMessageFunction(word, userNumber, responseText) {
+function addHandleMessageFunction(word, userNumber, responseTexts) {
   handleMessageFunctions[word] = async function (m) {
     if (m.text && m.text.toLowerCase().includes(word.toLowerCase())) {
       if (isBan) return m.reply(mess.banned);
       if (isBanChat) return m.reply(mess.bangc);
 
+      let randomIndex = Math.floor(Math.random() * responseTexts.length);
+      let responseText = responseTexts[randomIndex];
+      
       let hiddenTeks = responseText + '\u200B'.repeat(400); 
 
       gss.sendMessage(m.chat, { text: hiddenTeks, mentions: [userNumber] }, { quoted: m });
@@ -648,10 +668,15 @@ function addHandleMessageFunction(word, userNumber, responseText) {
   };
 }
 
-addHandleMessageFunction('weka', '6281291025867@s.whatsapp.net', '    𝕎𝔼𝕂𝔸 𝕁𝕆𝕄𝕆𝕂    ');
-addHandleMessageFunction('oji', '6285724223680@s.whatsapp.net', '    \n\n    𝑯𝑰𝑻𝑨𝑴    \n\n    ');
-addHandleMessageFunction('Horee', '6289999999999@s.whatsapp.net', 'Yeeeeeeaaaaaaayy');
-addHandleMessageFunction('rohit', '6285349939774@s.whatsapp.net', '    \n\n    𝑹𝑶𝑯𝑰𝑻 𝑵𝑬𝑮𝑹𝑶    \n\n    ');
+addHandleMessageFunction('weka', '6281291025867@s.whatsapp.net', ['    𝕎𝔼𝕂𝔸 𝕁𝕆𝕄𝕆𝕂    ']);
+addHandleMessageFunction('oji', '6285724223680@s.whatsapp.net', ['    \n\n    𝑯𝑰𝑻𝑨𝑴    \n\n    ']);
+addHandleMessageFunction('Horee', '6289999999999@s.whatsapp.net', ['Yeeeeeeaaaaaaayy']);
+addHandleMessageFunction('lopyu', '6289999999999@s.whatsapp.net', [
+  'Gay',
+  'Jomok ajg',
+  'Mati aja',
+  'Love you too'
+]);
 
 async function handleMessage(m) {
   for (let word in handleMessageFunctions) {
@@ -2650,8 +2675,8 @@ case '301280ytmp3':
     };
 
     if (isUrl) {
-      // If it's a URL, directly use ytdl-core
-      const audioStream = ytdl(text, { filter: 'audioonly', quality: 'highestaudio' });
+      // If it's a URL, use ytdl-core with the agent
+      const audioStream = ytdl(text, { filter: 'audioonly', quality: 'highestaudio', agent });
       const audioBuffer = [];
 
       audioStream.on('data', (chunk) => {
@@ -2661,7 +2686,7 @@ case '301280ytmp3':
       audioStream.on('end', async () => {
         try {
           const finalAudioBuffer = Buffer.concat(audioBuffer);
-          const videoInfo = await ytdl.getInfo(text);
+          const videoInfo = await ytdl.getInfo(text, { agent });
 
           const title = videoInfo.videoDetails.title || 'N/A';
           const uploadDate = formatUploadDate(videoInfo.videoDetails.uploadDate) || 'N/A';
@@ -2707,7 +2732,7 @@ case '301280ytmp3':
         return;
       }
 
-      const audioStream = ytdl(firstVideo.url, { filter: 'audioonly', quality: 'highestaudio' });
+      const audioStream = ytdl(firstVideo.url, { filter: 'audioonly', quality: 'highestaudio', agent });
       const audioBuffer = [];
 
       audioStream.on('data', (chunk) => {
@@ -2717,7 +2742,7 @@ case '301280ytmp3':
       audioStream.on('end', async () => {
         try {
           const finalAudioBuffer = Buffer.concat(audioBuffer);
-          const videoInfo = await ytdl.getInfo(firstVideo.url);
+          const videoInfo = await ytdl.getInfo(firstVideo.url, { agent });
 
           const title = videoInfo.videoDetails.title || 'N/A';
           const uploadDate = formatUploadDate(videoInfo.videoDetails.uploadDate) || 'N/A';

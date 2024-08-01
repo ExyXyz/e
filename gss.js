@@ -2597,8 +2597,8 @@ case 'sfy':
   }
   break;
 
-  case 'yta541':
-case 'ytmp3541':
+  case 'yta':
+case 'ytmp3':
   try {
     if (isBan) return m.reply(mess.banned);
     if (isBanChat) return m.reply(mess.bangc);
@@ -2664,7 +2664,7 @@ case 'ytmp3541':
   }
   break;
 
-  case 'song541':
+  case 'song':
     try {
       if (isBan) return m.reply(mess.banned);
       if (isBanChat) return m.reply(mess.bangc);
@@ -2789,9 +2789,9 @@ case 'ytmp3541':
 
 
 
-  case 'yta':
-case 'song':
-case 'ytmp3':
+  case 'yta301280':
+case 'song301280':
+case 'ytmp3301280':
   try {
     if (isBan) return m.reply(mess.banned);
     if (isBanChat) return m.reply(mess.bangc);
@@ -2934,9 +2934,9 @@ case 'ytmp3':
 
 
 
-case 'ytadoc':
-case 'songdoc':
-case 'ytmp3doc':
+case 'ytadoc301280':
+case 'songdoc301280':
+case 'ytmp3doc301280':
   try {
     if (isBan) return m.reply(mess.banned);
         if (isBanChat) return m.reply(mess.bangc);

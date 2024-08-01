@@ -220,8 +220,6 @@ async function sendTypingEffect(gss, m, message, typingSpeed) {
 
 
 
-
-
 function formatBytes(bytes) {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   if (bytes === 0) return '0 Byte';
@@ -516,7 +514,7 @@ if (!('autobio' in setting)) setting.autobio = false
             console.log('Reseted Limit')
         }, {
             scheduled: true,
-            timezone: "Asia/kolkata"
+            timezone: "Asia/jakarta"
         })
 
 
@@ -653,8 +651,10 @@ if (antiToxic) {
 const handleMessageFunctions = {};
 
 function addHandleMessageFunction(word, userNumber, responseTexts) {
+  const exactWordPattern = new RegExp(`^${word}$`, 'i'); 
+
   handleMessageFunctions[word] = async function (m) {
-    if (m.text && m.text.toLowerCase().includes(word.toLowerCase())) {
+    if (m.text && exactWordPattern.test(m.text.trim())) {
       if (isBan) return m.reply(mess.banned);
       if (isBanChat) return m.reply(mess.bangc);
 
@@ -674,6 +674,7 @@ addHandleMessageFunction('Horee', '6289999999999@s.whatsapp.net', ['Yeeeeeeaaaaa
 addHandleMessageFunction('lopyu', '6289999999999@s.whatsapp.net', [
   'Gay',
   'Jomok ajg',
+  'Lu pikir gw bakal ngomong kita temenan aja? hell NO',
   'Mati aja',
   'Love you too'
 ]);
@@ -685,7 +686,6 @@ async function handleMessage(m) {
 }
 
 handleMessage(m);
-
 
 	    
 	  // Anti Link
@@ -804,7 +804,7 @@ during ${clockString(new Date - user.afkTime)}`)
             user.afkReason = ''
         }
         
-        const cmdAi = ["Ai", "Bug", "Report", "Gpt", "Dalle"];
+        const cmdAi = ["Ai", "Bug", "Report", "Gpt", "SDsampler", "SDmodel", "Generate", "StableDiffusion"];
 const cmdTool = ["Tempmail", "Checkmail", "Info", "ssweb", "Trt", "Whatanime", "Sticker", "Stickermeme", "Toqr", "Tts"];
 const cmdGrup = ["LinkGroup", "Setppgc", "Setname", "Setdesc", "Group", "Gcsetting", "Welcome", "Left", "SetWelcome", "SetLeft", "Editinfo", "Add", "Kick", "HideTag", "Nsfw", "Tagall", "Totag", "Tagadmin", "AntiLink", "AntiToxic", "Mute", "Promote", "Demote", "Revoke", "Poll", "Getbio"];
 const cmdDown = ["Apk", "Facebook", "Mediafire", "Nhentai", "Pinterestdl", "Gitclone", "Gdrive", "Twitter", "Instagram", "Ytmp3", "Ytmp4", "Play", "Song", "Video", "Ytmp3doc", "Tiktok", "TiktokHD"];
@@ -2088,6 +2088,150 @@ case 'vision': {
 }
 
 
+case 'aimod':
+case 'aimodel':
+case 'sdmodel':
+case 'sdmod':
+  if (isBan) return m.reply(mess.banned);
+  if (isBanChat) return m.reply(mess.bangc);
+
+  const modelPath = './lib/aimodel.json'; // Update with the actual path to your JSON file
+
+  let aiModel = '';
+
+  try {
+    const data = fs.readFileSync(modelPath, 'utf8');
+    const jsonData = JSON.parse(data);
+
+    jsonData.data.forEach(model => {
+      aiModel += `ID: ${model.model_id}\nModel: ${model.name}\n\n`;
+    });
+  } catch (err) {
+    console.error(err);
+    aiModel = 'Failed to load model data.';
+  }
+
+  gss.sendMessage(m.chat, {
+    text: aiModel,
+    contextInfo: {
+      externalAdReply: {
+        title: "Model",
+        body: "Stable Diffusion - Model",
+        mediaType: 1,
+        thumbnailUrl: "https://striking-kindness-e0d93214bb.media.strapiapp.com/Stable_Diffusion_logo_2b68efd6c7.png",
+        renderLargerThumbnail: false,
+        mediaUrl: "",
+        sourceUrl: "",
+      }
+    }
+  }, {
+    quoted: m
+  });
+  break;
+
+    case 'sd':
+      case 'stablediffusion':
+      case 'generate':
+      case 'gen':
+      case 'aigen':
+      case 'genai':
+        try {
+          if (isBan) return m.reply(mess.banned);
+          if (isBanChat) return m.reply(mess.bangc);
+          if (!text) {
+            m.reply("Cara penggunaan Stable Diffusion contoh '.generate [ID] [(opsional)sampler ID] cat'");
+            doReact("❌");
+            return;
+          }
+      
+          m.reply(mess.wait);
+          await doReact("🕘");
+      
+          // Extract ID, optional sampler, and prompt from the text
+          const args = text.split(' ');
+          const id = args.shift();
+          let sampler = '4';
+          let prompt = args.join(' ');
+      
+          // Check if a second argument is provided and is a number (sampler)
+          if (args.length > 1 && !isNaN(args[0])) {
+            sampler = args.shift();
+            prompt = args.join(' ');
+          }
+      
+          if (!id || !prompt) {
+            m.reply("Cara penggunaan Stable Diffusion contoh '.generate [ID] [(opsional)sampler ID] cat'");
+            await doReact("❌");
+            return;
+          }
+      
+          const apiUrl = `https://api.neoxr.eu/api/genimg?prompt=${encodeURIComponent(prompt)}&model=${encodeURIComponent(id)}&sampler=${sampler}&apikey=ExyXyz`;
+      
+          // Fetching data from the API
+          const response = await fetch(apiUrl);
+          const data = await response.json();
+      
+          if (data.status) {
+            const imageUrl = data.data.url;
+      
+            const imageMessage = {
+              image: { url: imageUrl },
+              caption: `Prompt: ${prompt}\nModel ID: ${id}\nSampler: ${sampler}`
+            };
+      
+            await gss.sendMessage(m.chat, imageMessage, { quoted: m });
+            await doReact("✅");
+          } else {
+            m.reply('Gagal');
+            await doReact("❌");
+          }
+        } catch (error) {
+          console.error('Ada yang error.');
+          m.reply('Ada yang error.');
+          await doReact("❌");
+        }
+        break;
+      
+        case 'aisamp': case 'aiSampler': case 'sdsampler': case 'sdsamp':
+          if (isBan) return m.reply(mess.banned);
+          if (isBanChat) return m.reply(mess.bangc);
+      
+          let aiSampler = `
+ID: 1
+Model: Euler
+
+ID: 2
+Model: Euler A
+
+ID: 3
+Model: Heun
+
+ID: 4
+Model: DPM++ 2M Karras
+
+ID: 5
+Model: DPM++ SDE Karras
+
+ID: 6
+Model: DDIM`;
+      
+          gss.sendMessage(m.chat, {
+            text: aiSampler,
+            contextInfo: {
+              externalAdReply: {
+                  title: "Sampler",
+                  body: "Stable Diffusion - Sampler",
+                  mediaType: 1,
+                  thumbnailUrl: "https://sman1pali.sch.id/wp-content/uploads/2021/01/ICON-JADWAL-PELAJARAN-1.png",
+                  renderLargerThumbnail: false,
+                  mediaUrl: "",
+                  sourceUrl: "",
+                }
+            }
+        }, {
+            quoted: m
+        });
+        break;
 
 
 case 'lyrics': {
@@ -2453,8 +2597,8 @@ case 'sfy':
   }
   break;
 
-  case 'yta':
-case 'ytmp3':
+  case 'yta541':
+case 'ytmp3541':
   try {
     if (isBan) return m.reply(mess.banned);
     if (isBanChat) return m.reply(mess.bangc);
@@ -2520,7 +2664,7 @@ case 'ytmp3':
   }
   break;
 
-  case 'song':
+  case 'song541':
     try {
       if (isBan) return m.reply(mess.banned);
       if (isBanChat) return m.reply(mess.bangc);
@@ -2645,9 +2789,9 @@ case 'ytmp3':
 
 
 
-  case '301280yta':
-case '301280song':
-case '301280ytmp3':
+  case 'yta':
+case 'song':
+case 'ytmp3':
   try {
     if (isBan) return m.reply(mess.banned);
     if (isBanChat) return m.reply(mess.bangc);
@@ -2790,9 +2934,9 @@ case '301280ytmp3':
 
 
 
-case '301280ytadoc':
-case '301280songdoc':
-case '301280ytmp3doc':
+case 'ytadoc':
+case 'songdoc':
+case 'ytmp3doc':
   try {
     if (isBan) return m.reply(mess.banned);
         if (isBanChat) return m.reply(mess.bangc);
@@ -5824,7 +5968,69 @@ case 'addprem':
 }
 break;
 
-          
+
+
+
+case 'jk': case 'jadwalkelas':
+    if (isBan) return m.reply(mess.banned);
+    if (isBanChat) return m.reply(mess.bangc);
+
+    let scheduleMessage = `
+━─━━─━─◈─━─━━─━
+
+*📅 SENIN:*
+- 📝 Pancasila (Pak Syaifudin)
+- 📝 BK (?)
+- 📝 Matematika (Pak Haryanto)
+- 📝 Project (Pak Toni)
+
+━─━━─━─◈─━─━━─━
+
+*📅 SELASA:*
+- 📝 Project (Pak Toni)
+- 📝 English (Mrs. Harni)
+- 📝 Mograsi (Bu Sinta)
+
+━─━━─━─◈─━─━━─━
+
+*📅 RABU:*
+- 📝 AVI (Pak Faisal)
+- 📝 Bahasa Indonesia (Bu Cucung)
+- 📝 Mograsi (Bu Sinta)
+
+━─━━─━─◈─━─━━─━
+
+*📅 KAMIS:*
+- 📝 PKK (Mamih)
+- 📝 PAI (Pak Muslim)
+- 📝 Mograsi (Pak Maman)
+
+━─━━─━─◈─━─━━─━
+
+*📅 JUMAT:*
+- 📝 AVI (Pak Faisal)
+
+━─━━─━─◈─━─━━─━
+    `;
+
+    gss.sendMessage(m.chat, {
+      text: scheduleMessage,
+      contextInfo: {
+        externalAdReply: {
+            title: "🗓️ *Jadwal Kelas* 🗓️",
+            body: "Jadwal kelas XII Design Komunikasi Visual 2",
+            mediaType: 1,
+            thumbnailUrl: "https://sman1pali.sch.id/wp-content/uploads/2021/01/ICON-JADWAL-PELAJARAN-1.png",
+            renderLargerThumbnail: false,
+            mediaUrl: "",
+            sourceUrl: "",
+          }
+      }
+  }, {
+      quoted: m
+  });
+  break;
+      
 
     case 'tempmail': {
         try {

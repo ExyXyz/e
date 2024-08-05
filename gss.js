@@ -4010,45 +4010,40 @@ if (!isAdmins) return m.reply('Tʜɪs ꜰᴇᴀᴛᴜʀᴇ ɪs ᴏɴʟʏ ꜰᴏ�
         break;
 
 
-case "tts": case "say":
-  if (isBan) return m.reply(mess.banned);
-        if (isBanChat) return m.reply(mess.bangc);
-    if (!text) {
-        await doReact("❌");
-        return m.reply(`*Provide language code and text for text-to-speech.*\nExample: !tts en Hello, how are you?`);
-    }
-
-    const [langCode, ...textToSpeakArray] = text.split(" ");
-    const textToSpeak = textToSpeakArray.join(" ");
-
-    try {
-        const apiUrl = `https://texttospeech.apinepdev.workers.dev/?lang=${encodeURIComponent(langCode)}&text=${encodeURIComponent(textToSpeak)}`;
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) {
-            await doReact("❌");
-            return m.reply(`*Provide language code and text for text-to-speech.*\nExample: !tts en Hello, how are you?`);
-        }
-
-        // Directly send the audio stream
-        await gss.sendMessage(m.chat, {
-            audio: {
-                url: response.url, // Use the direct stream link from the API response
-            },
-            mimetype: 'audio/mp4',
-            ptt: true,
-            fileName: 'tts_audio.mp3',
-        }, {
-            quoted: m,
-        });
-
-        await doReact("✅");
-    } catch (error) {
-        console.error(error);
-        await doReact("❌");
-        return m.reply(`An error occurred while processing the text-to-speech request. ${error.message}`);
-    }
-    break;
+        case "tts": case "say":
+          if (isBan) return m.reply(mess.banned);
+          if (isBanChat) return m.reply(mess.bangc);
+          if (!text) {
+              await doReact("❌");
+              return m.reply(`*Provide language code and text for text-to-speech.*\nExample: !tts en Hello, how are you?`);
+          }
+      
+          const [langCode, ...textToSpeakArray] = text.split(" ");
+          const textToSpeak = textToSpeakArray.join(" ");
+      
+          try {
+              // Get the URL of the audio file (this returns a Promise)
+              const audioUrl = await googleTTS(textToSpeak, langCode, 1);
+      
+              // Send the audio message
+              await gss.sendMessage(m.chat, {
+                  audio: {
+                      url: audioUrl, // Use the audio URL from google-tts-api
+                  },
+                  mimetype: 'audio/mp4',
+                  ptt: true,
+                  fileName: 'tts_audio.mp3',
+              }, {
+                  quoted: m,
+              });
+      
+              await doReact("✅");
+          } catch (error) {
+              console.error(error);
+              await doReact("❌");
+              return m.reply(`An error occurred while processing the text-to-speech request. ${error.message}`);
+          }
+          break;
 
 
 
@@ -5404,25 +5399,35 @@ case '301280yt': {
 }
   
 
-case "gpt":
 case "ai":
-case "openai":
-case "chatgpt":
+case "meta":
+case "metaai":
     if (isBan) return m.reply(mess.banned);
     if (isBanChat) return m.reply(mess.bangc);
-    if (!text) {
+
+    // Initialize global conversation history if it doesn't exist
+    if (!global.conversationHistory) {
+        global.conversationHistory = {};
+    }
+
+    // Initialize conversation history for the chat if it doesn't exist
+    if (!global.conversationHistory[m.chat]) {
+        global.conversationHistory[m.chat] = [];
+    }
+
+    // Retrieve the conversation history for the current chat
+    let conversationHistory = global.conversationHistory[m.chat];
+
+    // Add the user's message to the conversation history
+    if (text) {
+        conversationHistory.push({ role: "user", content: text });
+    } else {
         await doReact("❌");
         return m.reply(`*Berikan saya pertanyaan,* misalnya, "Siapa yang membuat chat GPT?"`);
     }
 
     try {
-        const messages = [
-            { "content": "hai", "role": "user" },
-            { "content": "Hi, can I assist you today?", "role": "assistant" },
-            { "content": text, "role": "user" }
-        ];
-
-        const apiUrl = `https://api.neoxr.eu/api/gpt-completion?message=${encodeURIComponent(JSON.stringify(messages))}&apikey=ExyXyz`;
+        const apiUrl = `http://152.42.208.53:5000/api/meta?message=${encodeURIComponent(JSON.stringify(conversationHistory))}`;
 
         const res = await fetch(apiUrl);
 
@@ -5432,15 +5437,22 @@ case "chatgpt":
 
         const data = await res.json();
 
-        if (!data || !data.status || !data.data || !data.data.message) {
+        if (!data || !data.message) {
             return m.reply("Format data tidak valid dalam respons API");
         }
 
+        // Add the assistant's response to the conversation history
+        conversationHistory.push({ role: "assistant", content: data.message });
+
+        // Store the updated conversation history
+        global.conversationHistory[m.chat] = conversationHistory;
+
+        // Send the message
         await gss.sendMessage(m.chat, {
-            text: data.data.message,
+            text: data.message,
             contextInfo: {
                 externalAdReply: {
-                    title: "Ekushi - GPT 3.5",
+                    title: "Ekushi - Meta AI",
                     body: "",
                     mediaType: 1,
                     thumbnailUrl: "https://github.com/ExyXyz/Ekusi/blob/main/ChatGPT-Logo.jpg?raw=true",
@@ -5451,11 +5463,22 @@ case "chatgpt":
             },
         }, { quoted: m });
 
+        // Send media if available
+        if (data.media && data.media.length > 0) {
+            for (const item of data.media) {
+                await gss.sendMessage(m.chat, {
+                    image: { url: item.url },
+                    caption: `Prompt: ${item.prompt}`,
+                }, { quoted: m });
+            }
+        }
+
     } catch (error) {
         console.error(error);
         return m.reply("Terjadi kesalahan saat memproses permintaan.");
     }
     break;
+
 
 
       

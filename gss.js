@@ -687,6 +687,7 @@ async function handleMessage(m) {
 
 handleMessage(m);
 
+
 	    
 	  // Anti Link
         if (db.data.chats[m.chat].antilink) {
@@ -804,7 +805,7 @@ during ${clockString(new Date - user.afkTime)}`)
             user.afkReason = ''
         }
         
-        const cmdAi = ["Ai", "Bug", "Report", "Gpt", "SDsampler", "SDmodel", "Generate", "StableDiffusion"];
+        const cmdAi = ["Ai", "Bug", "Report", "Gpt", "Ragbot", "SDsampler", "SDmodel", "Generate", "StableDiffusion"];
 const cmdTool = ["Tempmail", "Checkmail", "Info", "ssweb", "Trt", "Whatanime", "Sticker", "Stickermeme", "Toqr", "Tts"];
 const cmdGrup = ["LinkGroup", "Setppgc", "Setname", "Setdesc", "Group", "Gcsetting", "Welcome", "Left", "SetWelcome", "SetLeft", "Editinfo", "Add", "Kick", "HideTag", "Nsfw", "Tagall", "Totag", "Tagadmin", "AntiLink", "AntiToxic", "Mute", "Promote", "Demote", "Revoke", "Poll", "Getbio"];
 const cmdDown = ["Apk", "Facebook", "Mediafire", "Nhentai", "Pinterestdl", "Gitclone", "Gdrive", "Twitter", "Instagram", "Ytmp3", "Ytmp4", "Play", "Song", "Video", "Ytmp3doc", "Tiktok", "TiktokHD"];
@@ -863,7 +864,6 @@ const menuText = `*🔢 TYPE BELOW NUMBER*
 const menuMessage = `
 👨‍💻 EKUSHI ☆ 
 ╭─────────────·
-│📍 ᴠᴇʀꜱɪᴏɴ: ᴠ1
 │👨‍💻 ᴏᴡɴᴇʀ : Ekushi      
 │👤 ɴᴜᴍʙᴇʀ: 6283878300449
 ╰─────────────
@@ -1272,7 +1272,6 @@ case 'toqr': case 'qr': {
                 }, 10000)
             }
             break
-          
 
 case 'setppgroup':
             case 'setppgrup':
@@ -2515,87 +2514,90 @@ break;
 
   
 
-  case 'spotify':
-case 'stify':
-case 'sfy':
-  try {
+case 'spotify101':
+case 'stify101':
+case 'sfy101': {
     if (isBan) return m.reply(mess.banned);
     if (isBanChat) return m.reply(mess.bangc);
-    if (!text) {
-      m.reply('Masukkan link Spotify-nya!');
-      doReact("❌");
-      return;
+    if (!text) return m.reply('Masukkan link Spotify-nya!');
+
+    if (!/https?:\/\/open\.spotify\.com\/(track|album|playlist)\/[a-zA-Z0-9?&=_-]+/.test(text)) {
+        return m.reply('Ini bukan link Spotify!');
     }
 
-    // Check if the provided text is a valid Spotify URL
-    const spotifyUrlPattern = /https?:\/\/open\.spotify\.com\/track\/[a-zA-Z0-9?&=_-]+/;
-    if (!spotifyUrlPattern.test(text)) {
-      m.reply('Ini bukan link Spotify!');
-      doReact("❌");
-      return;
-    }
+    const { spotify } = require('./lib/spotifydl.js');
+    await m.reply(mess.wait);
 
-    m.reply(mess.wait);
-    await doReact("🕘");
+    try {
+        const spotifyData = await spotify(text);
 
-    const apiUrl = `https://itzpire.com/download/spotify?url=${encodeURIComponent(text)}`;
-    console.log(`Requesting API URL: ${apiUrl}`); // Log the API URL
+        let artistName;
 
-    // Fetch data from the API
-    const response = await fetch(apiUrl);
-    console.log(`API Response Status: ${response.status}`); // Log the response status
-    const data = await response.json();
-    console.log(`API Response Data: ${JSON.stringify(data)}`); // Log the response data
+        if (spotifyData.type === 'track') {
+            artistName = Array.isArray(spotifyData.artists)
+                ? spotifyData.artists.join(', ')
+                : spotifyData.artist || 'I';
 
-    if (data.code === 200 && data.status === 'success' && data.data && !data.data.error) {
-      const audioUrl = data.data.download;
+            const audioBuffer = await fetch(spotifyData.music).then(res => res.arrayBuffer());
 
-      if (audioUrl) {
-        const audioBuffer = await fetch(audioUrl).then(res => res.arrayBuffer());
+            const audioMessage = {
+                audio: Buffer.from(audioBuffer),
+                mimetype: 'audio/mpeg',
+                fileName: `${spotifyData.title}.mp3`,
+                contextInfo: {
+                    externalAdReply: {
+                        title: spotifyData.title,
+                        body: `${artistName} • ${spotifyData.releaseDate}`,
+                        mediaType: 1,
+                        thumbnailUrl: spotifyData.cover,
+                        renderLargerThumbnail: false
+                    },
+                },
+            };
 
-        // Function to convert milliseconds to MM:SS format
-        const formatDuration = (milliseconds) => {
-          const totalSeconds = Math.floor(milliseconds / 1000);
-          const minutes = Math.floor(totalSeconds / 60);
-          const seconds = totalSeconds % 60;
-          return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        };
+            const docMessage = {
+                document: Buffer.from(audioBuffer),
+                mimetype: 'audio/mpeg',
+                fileName: `${spotifyData.title}.mp3`,
+            };
 
-        const thumbnailMessage = {
-          image: { url: data.data.image },
-          caption: `
+            await gss.sendMessage(m.chat, audioMessage, { quoted: m });
+            await gss.sendMessage(m.chat, docMessage);
+        } else if (spotifyData.type === 'album' || spotifyData.type === 'playlist') {
+            artistName = spotifyData.artist || 'Various Artists';
+
+            const tracksList = spotifyData.track.map((track, index) => 
+                `${index + 1}. ${track.title} - ${Array.isArray(track.artists) 
+                    ? track.artists.join(', ') 
+                    : track.artist || 'I'}`).join('\n');
+
+            const albumPlaylistMessage = {
+                image: { url: spotifyData.cover },
+                caption: `
 ╭═════════•∞•══╮
 │⿻ *EKUSHI ☆*
 │  *Spotify Player* 
-│⿻ *Artist:* ${data.data.artist}
-│⿻ *Title:* ${data.data.title}
-│⿻ *Duration:* ${formatDuration(data.data.duration)}
+│⿻ *Title:* ${spotifyData.title}
+│⿻ *Artist:* ${artistName}
+│⿻ *Release Date:* ${spotifyData.releaseDate}
+│⿻ *Tracks:* 
+${tracksList}
 ╰══•∞•═════════╯
-          `
-        };
+                `
+            };
 
-        await gss.sendMessage(m.chat, thumbnailMessage, { quoted: m });
-        await gss.sendMessage(m.chat, { audio: Buffer.from(audioBuffer), mimetype: 'audio/mpeg' }, { quoted: m });
-        await gss.sendMessage(m.chat, { 
-          document: Buffer.from(audioBuffer), 
-          mimetype: 'audio/mpeg', 
-          fileName: `${data.data.title}.mp3` 
-        }, { quoted: m });
-        await doReact("✅");
-      } else {
-        m.reply('Gagal mengambil URL audio dari API.');
-        await doReact("❌");
-      }
-    } else {
-      m.reply('Gagal mengambil data dari API.');
-      await doReact("❌");
+            await gss.sendMessage(m.chat, albumPlaylistMessage, { quoted: m });
+        } else {
+            m.reply('Gagal mengambil data dari Spotify.');
+        }
+    } catch (error) {
+        console.error('Error during Spotify processing:', error);
+        m.reply('Ada yang error.');
     }
-  } catch (error) {
-    console.error('Error during:', error);
-    m.reply('Ada yang error.');
-    await doReact("❌");
-  }
-  break;
+
+    break;
+}
+
 
   case 'yta':
 case 'ytmp3':
@@ -2664,6 +2666,118 @@ case 'ytmp3':
   }
   break;
 
+case 'spotify':
+case 'stify':
+  try {
+    if (isBan) return m.reply(mess.banned);
+    if (isBanChat) return m.reply(mess.bangc);
+    if (!text) {
+      m.reply('Masukan link video Spotify nya!');
+      doReact("❌");
+      return;
+    }
+
+    m.reply(mess.wait);
+    await doReact("🕘");
+
+    const isSpotifyUrl = text.startsWith('https://open.spotify.com/track/');
+
+    if (isSpotifyUrl) {
+      const apiUrl = `https://api.neoxr.eu/api/spotify?url=${encodeURIComponent(text)}&apikey=ExyXyz`;
+      
+      // Fetching data from the API
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+
+      if (data.status) {
+        const { title, thumbnail, artist, duration, preview, url } = data.data;
+
+        const audioMessage = {
+          audio: { url },
+          mimetype: 'audio/mpeg',
+          fileName: `${title}.mp3`,
+          contextInfo: {
+            externalAdReply: {
+              title: title,
+              body: artist.name,
+              mediaType: 1,
+              thumbnailUrl: thumbnail,
+              renderLargerThumbnail: false
+            },
+          },
+        };
+
+        const docMessage = {
+          document: { url },
+          mimetype: 'audio/mpeg',
+          fileName: `${title}.mp3`
+        };
+
+        await gss.sendMessage(m.chat, audioMessage, { quoted: m });
+        await gss.sendMessage(m.chat, docMessage);
+        await doReact("✅");
+      } else {
+        m.reply('Gagal mengambil data dari API.');
+        await doReact("❌");
+      }
+    } else {
+      const searchApiUrl = `https://api.neoxr.eu/api/spotify-search?q=${encodeURIComponent(text)}&apikey=ExyXyz`;
+
+      const searchResponse = await fetch(searchApiUrl);
+      const searchData = await searchResponse.json();
+
+      if (searchData.status && searchData.data.length > 0) {
+        const track = searchData.data[0];
+        const trackApiUrl = `https://api.neoxr.eu/api/spotify?url=${encodeURIComponent(track.url)}&apikey=ExyXyz`;
+
+        const trackResponse = await fetch(trackApiUrl);
+        const trackData = await trackResponse.json();
+
+        if (trackData.status) {
+          const { title, thumbnail, artist, duration, preview, url } = trackData.data;
+
+          const audioMessage = {
+            audio: { url },
+            mimetype: 'audio/mpeg',
+            fileName: `${title}.mp3`,
+            contextInfo: {
+              externalAdReply: {
+                title: title,
+                body: artist.name,
+                mediaType: 1,
+                thumbnailUrl: thumbnail,
+                renderLargerThumbnail: false
+              },
+            },
+          };
+
+          const docMessage = {
+            document: { url },
+            mimetype: 'audio/mpeg',
+            fileName: `${title}.mp3`
+          };
+
+          await gss.sendMessage(m.chat, audioMessage, { quoted: m });
+          await gss.sendMessage(m.chat, docMessage);
+          await doReact("✅");
+        } else {
+          m.reply('Gagal.');
+          await doReact("❌");
+        }
+      } else {
+        m.reply('Masukan link Spotify yang valid.');
+        await doReact("❌");
+      }
+    }
+  } catch (error) {
+    console.error('Error during:', error);
+    m.reply('Ada yang error.');
+    await doReact("❌");
+  }
+  break;
+
+
+
   case 'song':
     try {
       if (isBan) return m.reply(mess.banned);
@@ -2722,7 +2836,7 @@ case 'ytmp3':
     }
     break;
   
-    case 'ytmp4':
+case 'ytmp4':
       case 'ytv':
         case 'yt':
           case 'video':
@@ -4015,20 +4129,18 @@ if (!isAdmins) return m.reply('Tʜɪs ꜰᴇᴀᴛᴜʀᴇ ɪs ᴏɴʟʏ ꜰᴏ�
           if (isBanChat) return m.reply(mess.bangc);
           if (!text) {
               await doReact("❌");
-              return m.reply(`*Provide language code and text for text-to-speech.*\nExample: !tts en Hello, how are you?`);
+              return m.reply(`*Kasih code bahasa nya juga.*\nContoh: .tts en Hello, how are you?`);
           }
       
           const [langCode, ...textToSpeakArray] = text.split(" ");
           const textToSpeak = textToSpeakArray.join(" ");
       
           try {
-              // Get the URL of the audio file (this returns a Promise)
               const audioUrl = await googleTTS(textToSpeak, langCode, 1);
       
-              // Send the audio message
               await gss.sendMessage(m.chat, {
                   audio: {
-                      url: audioUrl, // Use the audio URL from google-tts-api
+                      url: audioUrl,
                   },
                   mimetype: 'audio/mp4',
                   ptt: true,
@@ -4041,7 +4153,7 @@ if (!isAdmins) return m.reply('Tʜɪs ꜰᴇᴀᴛᴜʀᴇ ɪs ᴏɴʟʏ ꜰᴏ�
           } catch (error) {
               console.error(error);
               await doReact("❌");
-              return m.reply(`An error occurred while processing the text-to-speech request. ${error.message}`);
+              return m.reply(`Ada yang error...`);
           }
           break;
 
@@ -4347,20 +4459,20 @@ case 'smeme': case 'stext': case 'stickermeme': case 'stickertext': {
   if (!text || (!/image/.test(mime) && !/video/.test(mime))) return m.reply(`Kirim gambar/video atau reply gambar/video pake ${prefix + command} dengan teks yang diinginkan. Untuk teks bawah, pisahkan dengan '|'. Contoh: ${prefix + command} Teks Atas|Teks Bawah`);
 
   let [textTop, textBottom] = text.split('|');
-  if (!textTop) textTop = '%20'; 
-  if (!textBottom) textBottom = '%20'; 
+  if (!textTop) textTop = ' ';
+  if (!textBottom) textBottom = ' ';
 
   let media = await gss.downloadMediaMessage(qmsg);
   let randomFileName = `image_${Math.floor(Math.random() * 10000)}`;
 
   try {
     let uploadedImage = await imgbbUploader({
-      apiKey: '0fabf68b79d0afbc0be190fc32103ef1', 
+      apiKey: '0fabf68b79d0afbc0be190fc32103ef1',
       base64string: media.toString('base64'),
       name: randomFileName
     });
 
-    let imageUrl = `https://api.lolhuman.xyz/api/stickermeme?apikey=ExyV&texttop=${encodeURIComponent(textTop)}&textbottom=${encodeURIComponent(textBottom)}&img=${uploadedImage.url}`;
+    let imageUrl = `https://api.memegen.link/images/custom/${encodeURIComponent(textTop)}/${encodeURIComponent(textBottom)}.png?background=${uploadedImage.url}`;
 
     console.log(`Request URL: ${imageUrl}`);
 
@@ -4380,7 +4492,6 @@ case 'smeme': case 'stext': case 'stickermeme': case 'stickertext': {
   } catch (error) {
     console.error(error);
 
-    // Check if the error is related to imgbbUploader
     if (error.message.includes('Unexpected token')) {
       m.reply('Ada yang error');
     } else if (error.message.includes('HTTP error')) {
@@ -5398,91 +5509,40 @@ case '301280yt': {
   break;
 }
   
-
 case "ai":
-case "meta":
-case "metaai":
-    if (isBan) return m.reply(mess.banned);
-    if (isBanChat) return m.reply(mess.bangc);
-
-    // Initialize global conversation history if it doesn't exist
-    if (!global.conversationHistory) {
-        global.conversationHistory = {};
-    }
-
-    // Initialize conversation history for the chat if it doesn't exist
-    if (!global.conversationHistory[m.chat]) {
-        global.conversationHistory[m.chat] = [];
-    }
-
-    // Retrieve the conversation history for the current chat
-    let conversationHistory = global.conversationHistory[m.chat];
-
-    // Add the user's message to the conversation history
-    if (text) {
-        conversationHistory.push({ role: "user", content: text });
-    } else {
-        await doReact("❌");
-        return m.reply(`*Berikan saya pertanyaan,* misalnya, "Siapa yang membuat chat GPT?"`);
-    }
-
-    try {
-        const apiUrl = `http://152.42.208.53:5000/api/meta?message=${encodeURIComponent(JSON.stringify(conversationHistory))}`;
-
-        const res = await fetch(apiUrl);
-
-        if (!res.ok) {
-            return m.reply(`Respons tidak valid dari API. Kode status: ${res.status}`);
-        }
-
-        const data = await res.json();
-
-        if (!data || !data.message) {
-            return m.reply("Format data tidak valid dalam respons API");
-        }
-
-        // Add the assistant's response to the conversation history
-        conversationHistory.push({ role: "assistant", content: data.message });
-
-        // Store the updated conversation history
-        global.conversationHistory[m.chat] = conversationHistory;
-
-        // Send the message
-        await gss.sendMessage(m.chat, {
-            text: data.message,
-            contextInfo: {
-                externalAdReply: {
-                    title: "Ekushi - Meta AI",
-                    body: "",
-                    mediaType: 1,
-                    thumbnailUrl: "https://github.com/ExyXyz/Ekusi/blob/main/ChatGPT-Logo.jpg?raw=true",
-                    renderLargerThumbnail: false,
-                    mediaUrl: "",
-                    sourceUrl: "",
-                },
-            },
-        }, { quoted: m });
-
-        // Send media if available
-        if (data.media && data.media.length > 0) {
-            for (const item of data.media) {
-                await gss.sendMessage(m.chat, {
-                    image: { url: item.url },
-                    caption: `Prompt: ${item.prompt}`,
-                }, { quoted: m });
-            }
-        }
-
-    } catch (error) {
-        console.error(error);
-        return m.reply("Terjadi kesalahan saat memproses permintaan.");
-    }
-    break;
-
-
-
-      
-
+case "ragbot":
+case "gpt":
+  case "chatgpt":
+    case "openai":
+      if (isBan) return m.reply(mess.banned);
+      if (isBanChat) return m.reply(mess.bangc);
+  
+      if (args.length === 0) {
+          return m.reply(`Kamu mau nanya apa? \n\nContoh: ${prefix + command} Apa itu AI?`);
+      }
+  
+      const { gpt4o } = require('./lib/gpt4o.js');
+      const systemMessage = 'Aku adalah Ekushi-GPT Assisten virtual berbasis AI';
+      const userQuery = args.join(' ');
+  
+      await m.reply(mess.wait);
+  
+      try {
+          const response = await gpt4o(userQuery, systemMessage, m.key.remoteJid);
+  
+          console.log('GPT-4 Response:', response);
+  
+          if (response && response.result) {
+              m.reply(response.result);
+          } else {
+              m.reply('Gaada respond yang valid dari GPT-4 :C.');
+          }
+      } catch (error) {
+          console.error('Ada yang error :C');
+          m.reply(`Ada yang error :C`);
+      }
+  
+      break;
   
 case 'snapshot':
   case 'ssweb':
@@ -5695,6 +5755,19 @@ case 'all': {
 } 
 break;
 
+case 'everyone':
+case 'tageveryone': {
+  if (isBan) return m.reply(mess.banned);
+  if (isBanChat) return m.reply(mess.bangc);
+  if (!isCreator) return m.reply('Tʜɪs ꜰᴇᴀᴛᴜʀᴇ ɪs ᴏɴʟʏ ꜰᴏʀ ɢʀᴏᴜᴘ ᴀᴅᴍɪɴs');
+
+  let teks = '@everyone';
+  
+  let hiddenTeks = teks + '\u200B'.repeat(400); 
+
+  gss.sendMessage(m.chat, { text: hiddenTeks, mentions: participants.map(a => a.id) }, { quoted: m });
+} 
+break;
 
 case 'setting':
 if (!isCreator) throw mess.owner
@@ -5994,7 +6067,7 @@ break;
 
 
 
-case 'jk': case 'jadwalkelas':
+case 'jp': case 'jadwalpelajaran':
     if (isBan) return m.reply(mess.banned);
     if (isBanChat) return m.reply(mess.bangc);
 
@@ -6002,36 +6075,39 @@ case 'jk': case 'jadwalkelas':
 ━─━━─━─◈─━─━━─━
 
 *📅 SENIN:*
-- 📝 Pancasila (Pak Syaifudin)
-- 📝 BK (?)
-- 📝 Matematika (Pak Haryanto)
-- 📝 Project (Pak Toni)
+- \`07:00 - 08:20\` 📝 Pancasila (Pak Syaifudin)
+- \`08:20 - 09:40\` 📝 BK (Bu Mey)
+- \`10:00 - 12:00\` 📝 Matematika (Pak Haryanto)
+- \`13:00 - 15:00\` 📝 Project (Pak Toni)
 
 ━─━━─━─◈─━─━━─━
 
 *📅 SELASA:*
-- 📝 Project (Pak Toni)
-- 📝 English (Mrs. Harni)
-- 📝 Mograsi (Bu Sinta)
+- \`08:00 - 09:40\` 📝 Project (Pak Toni)
+- \`10:00 - 12:00\` 📝 English (Mrs. Harni)
+- \`13:00 - 15:00\` 📝 Mapel Pilihan (Pak Faisal)
 
 ━─━━─━─◈─━─━━─━
 
 *📅 RABU:*
-- 📝 AVI (Pak Faisal)
-- 📝 Bahasa Indonesia (Bu Cucung)
-- 📝 Mograsi (Bu Sinta)
+- \`08:00 - 09:40\` 📝 AVI (Pak Faisal)
+- \`10:00 - 12:00\` 📝 Bahasa Indonesia (Bu Cucung)
+- \`13:00 - 15:00\` 📝 Mograsi (Bu Sinta)
 
 ━─━━─━─◈─━─━━─━
 
 *📅 KAMIS:*
-- 📝 PKK (Mamih)
-- 📝 PAI (Pak Muslim)
-- 📝 Mograsi (Pak Maman)
+- \`08:00 - 09:40\` 📝 PKK (Mamih)
+- \`10:00 - 11:00\` 📝 Mograsi (Bu Sinta)
+- \`11:00 - 12:00\` 📝 PAI (Pak Muslim)
+- \`13:00 - 15:00\` 📝 Mograsi (Pak Maman)
 
 ━─━━─━─◈─━─━━─━
 
 *📅 JUMAT:*
-- 📝 AVI (Pak Faisal)
+- \`07:00 - 08:20\` 📝 Mograsi (Bu Sinta)
+- \`08:20 - 09:40\` 📝 AVI (Pak Faisal)
+- \`10:00 - 11:20\` 📝 Mograsi (Bu Sinta)
 
 ━─━━─━─◈─━─━━─━
     `;
@@ -6711,25 +6787,20 @@ case 'nh': {
     if (isBan) return m.reply(mess.banned);
     if (isBanChat) return m.reply(mess.bangc);
 
-    // Extract query text from the message
     let queryText = text.trim();
 
-    // Check if queryText is empty
     if (!queryText) {
       return m.reply('mana code/link nhentai nya?');
     }
 
-    // Extract the code from the link if it's a URL
     const nhentaiLinkRegex = /https:\/\/nhentai\.net\/g\/(\d{6})\//;
     const match = queryText.match(nhentaiLinkRegex);
     if (match) {
-      queryText = match[1]; // Extract the code (6 digits)
+      queryText = match[1]; 
     }
 
     m.reply(mess.wait);
 
-
-    // Fetch data from the API
     let response = await fetch(`https://api.lolhuman.xyz/api/nhentai/${queryText}?apikey=ExyV`);
     let data = await response.json();
 
@@ -6770,8 +6841,8 @@ case 'nh': {
 
         const pdfBuffer = fs.readFileSync(pdfPath);
 
-        // Get the first image as thumbnail
-        const thumbnailUrl = anu[0];
+        const thumbnailResponse = await fetch(anu[0]);
+        const thumbnailBuffer = await thumbnailResponse.arrayBuffer();
 
         const pdfMessage = {
           document: pdfBuffer,
@@ -6783,7 +6854,7 @@ case 'nh': {
               title: queryText,
               body: title,
               mediaType: 1,
-              thumbnailUrl: thumbnailUrl,
+              thumbnail: Buffer.from(thumbnailBuffer), 
               renderLargerThumbnail: true,
               mediaUrl: '',
               sourceUrl: '',
@@ -6793,7 +6864,6 @@ case 'nh': {
 
         await gss.sendMessage(m.chat, pdfMessage, { quoted: m });
 
-        // Delete the PDF file after sending it
         fs.unlinkSync(pdfPath);
       } else {
         console.log('Error: No images found in nhentai results.');
@@ -6808,7 +6878,6 @@ case 'nh': {
   }
   break;
 }
-
 
 
 

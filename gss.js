@@ -3722,149 +3722,7 @@ case '𝐕𝐢𝐝𝐞𝐨𝐝𝐨𝐜𝐮𝐦𝐞𝐧𝐭': {
                 if (!isCreator) return m.reply(mess.owner)
                 m.reply('Proses....')
                 exec('pm2 restart all')
-            break
-
-
-
-            async function instaDownload(url) {
-              try {
-                  const apiUrl = `https://api.agatz.xyz/api/instagram?url=${encodeURIComponent(url)}`;
-                  const response = await fetch(apiUrl);
-          
-                  if (!response.ok) {
-                      const errorMessage = await response.text();
-                      throw new Error(`API Error (${response.status}): ${errorMessage}`);
-                  }
-          
-                  const result = await response.json();
-                  return result;
-              } catch (error) {
-                  console.error(`Error with API: ${error.message}`);
-                  throw error;
-              }
-          }
-          
-          async function downloadInstagramMedia(url) {
-              try {
-                  const result = await instaDownload(url);
-          
-                  console.log('API Response:', result);
-          
-                  if (result.status === 200 && result.data && result.data.length > 0) {
-                      const mediaUrls = result.data;
-                      console.log('Media URLs:', mediaUrls);
-          
-                      const mediaItems = [];
-                      for (const media of mediaUrls) {
-                          const mediaUrl = media.link;
-                          const mediaResponse = await fetch(mediaUrl);
-                          if (!mediaResponse.ok) {
-                              throw new Error('Error fetching media content for type inspection');
-                          }
-                          const contentType = mediaResponse.headers.get('content-type');
-                          console.log('Content Type:', contentType);
-          
-                          const mediaType = contentType.includes('video') ? 'video' : 'image';
-                          mediaItems.push({ type: mediaType, url: mediaUrl });
-                      }
-          
-                      return mediaItems;
-                  } else {
-                      throw new Error('Invalid or unexpected API response');
-                  }
-              } catch (error) {
-                  console.error('Error downloading Instagram media:', error.message);
-                  throw error;
-              }
-          }
-          
-          async function downloadAndSendMedia(m, text, isDocument) {
-              const url = text;
-          
-              if (!url) {
-                  return m.reply(`Link nya manah?\n\nContoh: ${prefix + command} https://www.instagram.com/p/CK0tLXyAzEI`);
-              }
-          
-              m.reply(mess.wait);
-          
-              try {
-                  const mediaItems = await downloadInstagramMedia(url);
-                  const imageItems = mediaItems.filter(media => media.type === 'image');
-                  const videoItems = mediaItems.filter(media => media.type === 'video');
-          
-                  if (imageItems.length > 0) {
-                      if (imageItems.length === 1) {
-                          const imageUrl = imageItems[0].url;
-                          const response = await fetch(imageUrl);
-                          const bufferArray = await response.arrayBuffer();
-                          const fileBuffer = Buffer.from(bufferArray);
-                          await gss.sendMessage(m.chat, { image: fileBuffer, mimetype: 'image/jpeg', caption: '' }, { quoted: m });
-                      } else {
-                          const createImage = async (url) => {
-                              const { imageMessage } = await generateWAMessageContent({ image: { url }, jpegThumbnail: "" }, { upload: gss.waUploadToServer });
-                              return imageMessage;
-                          }
-          
-                          const cards = [];
-                          for (const imageUrl of imageItems) {
-                              const imageMessage = await createImage(imageUrl.url);
-                              cards.push({
-                                  header: { hasMediaAttachment: true, imageMessage },
-                                  nativeFlowMessage: {}
-                              });
-                          }
-          
-                          const { message, key } = generateWAMessageFromContent(m.chat, {
-                              interactiveMessage: {
-                                  body: { text: `𝐒𝐞𝐥𝐞𝐬𝐚𝐢 𝐧𝐢𝐡.....` },
-                                  footer: { text: "Instagram Download EKUSHI ☆" },
-                                  carouselMessage: { cards }
-                              }
-                          }, { quoted: m });
-          
-                          await gss.relayMessage(m.chat, { viewOnceMessage: { message } }, { messageId: key.id });
-                      }
-                  }
-          
-                  if (videoItems.length > 0) {
-                      for (const media of videoItems) {
-                          const response = await fetch(media.url);
-                          if (!response.ok) {
-                              throw new Error('Error fetching media content');
-                          }
-                          const bufferArray = await response.arrayBuffer();
-                          const fileBuffer = Buffer.from(bufferArray);
-          
-                          const fileName = `instagram_media.mp4`;
-                          const mimeType = 'video/mp4';
-          
-                          console.log('Sending media with MIME type:', mimeType);
-          
-                          if (isDocument) {
-                              await gss.sendMessage(m.chat, { document: fileBuffer, mimetype: mimeType, fileName }, { quoted: m });
-                          } else {
-                              await gss.sendMessage(m.chat, { video: fileBuffer, mimetype: mimeType, fileName, caption: 'Instagram Download EKUSHI ☆' }, { quoted: m });
-                          }
-                      }
-                  }
-              } catch (error) {
-                  console.error('Error while processing Instagram media:', error);
-                  return m.reply(`An error occurred: ${error.message}`);
-              }
-          }
-          
-          // Example command handling
-          case 'igdl':
-          case 'insta':
-          case 'ig':
-          case 'instagram':
-              if (isBan) return m.reply(mess.banned);
-              if (isBanChat) return m.reply(mess.bangc);
-              await downloadAndSendMedia(m, text, false);
-              break;
-          
-          
-          
+            break        
 
 
 case 'toanime':
@@ -4608,12 +4466,10 @@ case 'pix': {
     let query = textParts[0].trim();
     let limit = textParts[1] ? parseInt(textParts[1].trim()) : 1;
 
-    // Enforce the maximum limit of 30 pictures
-    limit = Math.min(limit, 30);
+    limit = Math.min(limit, 20);
 
     m.reply(mess.wait);
     
-    // Fetch results from the Pixiv API
     let response = await fetch(`https://api.lolhuman.xyz/api/pixiv?apikey=ExyV&query=${encodeURIComponent(query)}`);
     let data = await response.json();
 
@@ -4621,15 +4477,12 @@ case 'pix': {
       throw new Error('No results found for the query');
     }
 
-    // Limit the number of results to the specified limit
     let results = data.result.slice(0, limit);
 
     if (results.length === 1) {
-      // Single image case
       let result = results[0];
       await gss.sendMessage(m.chat, { image: { url: result.image }, caption: `⭔ Title: ${result.title}` }, { quoted: m });
     } else {
-      // Multiple images case, send as carousel
       const cards = [];
       for (const result of results) {
         const { imageMessage } = await generateWAMessageContent({ image: { url: result.image }, jpegThumbnail: "" }, { upload: gss.waUploadToServer });
@@ -4659,6 +4512,140 @@ case 'pix': {
 }
 break;
 
+case 'rule34':
+case 'r34': {
+  try {
+    if (isBan) return m.reply(mess.banned);
+    if (isBanChat) return m.reply(mess.bangc);
+
+    if (args.length === 0) {
+      return m.reply(`Prompt nya manah? \n\nContoh: ${prefix + command} kusanagi_nene\n\nContoh 2: ${prefix + command} 2 kusanagi_nene\n"2" nya untuk page number nya buat dapetin hasil yang berbeda`);
+  }
+
+    let textParts = text.split(' ');
+    let page = 1;
+    let query = text.trim();
+
+    if (!isNaN(textParts[0])) {
+      page = parseInt(textParts[0].trim());
+      query = textParts.slice(1).join(' ').trim();
+    }
+
+    let limit = 10;
+    page = isNaN(page) || page < 1 ? 1 : page;
+    let start = (page - 1) * limit;
+
+    m.reply(mess.wait);
+
+    let response = await fetch(`https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&tags=${encodeURIComponent(query)}&json=1`);
+
+    if (!response.ok) {
+      let errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    let data = await response.json();
+
+    if (!data || data.length === 0) {
+      throw new Error('Gaada :C');
+    }
+
+    let imageResults = data.filter(item => item.file_url && !item.file_url.endsWith('.mp4')).slice(start, start + limit);
+
+    if (imageResults.length === 0) {
+      throw new Error('Gak nemu apa apa :C');
+    }
+
+    const cards = [];
+    for (const result of imageResults) {
+      const { imageMessage } = await generateWAMessageContent({ image: { url: result.file_url }, jpegThumbnail: "" }, { upload: gss.waUploadToServer });
+      cards.push({
+        header: { hasMediaAttachment: true, imageMessage },
+        nativeFlowMessage: {}
+      });
+    }
+
+    const { message, key } = generateWAMessageFromContent(m.chat, {
+      interactiveMessage: {
+        body: { text: `𝐒𝐞𝐥𝐞𝐬𝐚𝐢 𝐧𝐢𝐡.....` },
+        footer: { text: "Rule34 EKUSHI ☆" },
+        carouselMessage: { cards }
+      }
+    }, { quoted: m });
+
+    await gss.relayMessage(m.chat, { viewOnceMessage: { message } }, { messageId: key.id });
+
+    await doReact("✅");
+  } catch (error) {
+    console.error('Ada yang error...', error);
+    m.reply(`Ada yang error...`);
+    await doReact("❌");
+  }
+}
+break;
+
+case 'rule34video':
+case 'r34v': {
+  try {
+    if (isBan) return m.reply(mess.banned);
+    if (isBanChat) return m.reply(mess.bangc);
+
+    if (args.length === 0) {
+      return m.reply(`Prompt nya manah? \n\nContoh: ${prefix + command} kusanagi_nene\n\nContoh 2: ${prefix + command} 2 kusanagi_nene\n"2" nya untuk page number nya buat dapetin hasil yang berbeda`);
+  }
+
+    let textParts = text.split(' ');
+    let page = 1;
+    let query = text.trim();
+
+    if (!isNaN(textParts[0])) {
+      page = parseInt(textParts[0].trim());
+      query = textParts.slice(1).join(' ').trim();
+    }
+
+    m.reply(mess.wait);
+
+    let response = await fetch(`https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&tags=${encodeURIComponent(query)}&json=1`);
+    
+    if (!response.ok) {
+      let errorText = await response.text();
+      console.error('Error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    let data = await response.json();
+
+    if (!data || data.length === 0) {
+      throw new Error('Gaada :C');
+    }
+
+    let videoResults = data.filter(item => item.file_url && item.file_url.endsWith('.mp4'));
+
+    if (videoResults.length === 0) {
+      throw new Error('Gak nemu apa apa :C');
+    }
+
+    let index = page - 1;
+
+    if (index >= videoResults.length || index < 0) {
+      throw new Error('Gak nemu apa apa :C');
+    }
+
+    let result = videoResults[index];
+    
+    await gss.sendMessage(m.chat, { video: { url: result.file_url }, caption: `⭔ Title: ${result.id}` }, { quoted: m });
+
+    await doReact("✅");
+  } catch (error) {
+    console.error('Ada yang error...', error);
+    m.reply(`Ada yang error...`);
+    await doReact("❌");
+  }
+}
+break;
+
+
 
 
 case 'pinterestdl':
@@ -4675,7 +4662,6 @@ case 'pindl': {
 
     m.reply(mess.wait);
 
-    // Fetch data from the API
     let response = await fetch(`https://api.neoxr.eu/api/pin-v2?url=${encodeURIComponent(url)}&apikey=ExyXyz`);
     let data = await response.json();
 
@@ -5019,7 +5005,7 @@ case 'tiktoknowm':
   try {
     if (isBan) return m.reply(mess.banned);
     if (isBanChat) return m.reply(mess.bangc);
-    if (!text) return m.reply('Enter Query Link!');
+    if (!text) return m.reply('Link TikTok nya manah?');
 
     m.reply(mess.wait);
 
@@ -5058,13 +5044,11 @@ case 'tiktoknowm':
         fs.unlinkSync(`./${randomName}`);
       } else if (photos.length > 0) {
         if (photos.length === 1) {
-          // Send a normal image message if there's only one image
           await gss.sendMessage(m.chat, {
             image: { url: photos[0].url },
             caption: caption
           }, { quoted: m });
         } else {
-          // Send a carousel if there are multiple images
           const createImage = async (url) => {
             const { imageMessage } = await generateWAMessageContent({ image: { url }, jpegThumbnail: "" }, { upload: gss.waUploadToServer });
             return imageMessage;
@@ -5094,7 +5078,6 @@ case 'tiktoknowm':
         m.reply('Error: No video or photos found in TikTok media.');
       }
 
-      // Fetch and send the TikTok audio
       if (result.music_info && result.music_info.url) {
         const audioUrl = result.music_info.url;
 
@@ -5128,10 +5111,93 @@ case 'tiktoknowm':
 
 
 
-
-
-
-
+  case 'instagram':
+    case 'igdl':
+    case 'ig':
+      try {
+        if (isBan) return m.reply(mess.banned);
+        if (isBanChat) return m.reply(mess.bangc);
+        if (!text) return m.reply('Link IG nya manah?');
+    
+        m.reply(mess.wait);
+    
+        let anu = await fetchJson(`https://api.neoxr.eu/api/ig?url=${encodeURIComponent(text)}&apikey=ExyXyz`);
+    
+        console.log('Instagram API Response:', anu);
+    
+        if (anu.status === true && anu.data) {
+          const result = anu.data;
+          
+          const images = result.filter(item => item.type === 'jpg');
+          const videos = result.filter(item => item.type === 'mp4');
+    
+          if (images.length > 0) {
+            if (images.length === 1) {
+              await gss.sendMessage(m.chat, {
+                image: { url: images[0].url },
+                caption: ' '
+              }, { quoted: m });
+            } else {
+              const createImage = async (url) => {
+                const { imageMessage } = await generateWAMessageContent({ image: { url }, jpegThumbnail: "" }, { upload: gss.waUploadToServer });
+                return imageMessage;
+              }
+    
+              const cards = [];
+              for (const photo of images) {
+                const imageMessage = await createImage(photo.url);
+                cards.push({
+                  header: { hasMediaAttachment: true, imageMessage },
+                  nativeFlowMessage: {}
+                });
+              }
+    
+              const { message, key } = generateWAMessageFromContent(m.chat, {
+                interactiveMessage: {
+                  body: { text: '𝐒𝐞𝐥𝐞𝐬𝐚𝐢 𝐧𝐢𝐡.....' },
+                  footer: { text: 'Instagram Download by EKUSHI ☆' },
+                  carouselMessage: { cards }
+                }
+              }, { quoted: m });
+    
+              await gss.relayMessage(m.chat, { viewOnceMessage: { message } }, { messageId: key.id });
+            }
+          }
+    
+          if (videos.length > 0) {
+            for (const video of videos) {
+              const response = await axios.get(video.url, { responseType: 'arraybuffer' });
+              const videoBuffer = Buffer.from(response.data);
+    
+              const randomName = `temp_${Math.floor(Math.random() * 10000)}.mp4`;
+              fs.writeFileSync(`./${randomName}`, videoBuffer);
+    
+              const thumbnailPath = './tutu.png';
+              const jpegThumbnail = fs.readFileSync(thumbnailPath);
+    
+              await gss.sendMessage(m.chat, {
+                video: fs.readFileSync(`./${randomName}`),
+                mimetype: 'video/mp4',
+                caption: '𝐒𝐞𝐥𝐞𝐬𝐚𝐢 𝐧𝐢𝐡..... EKUSHI',
+                jpegThumbnail: jpegThumbnail
+              }, { quoted: m });
+    
+              fs.unlinkSync(`./${randomName}`);
+            }
+          } else {
+            console.log('Error: No video found in Instagram media.');
+            m.reply('Ada yang error...');
+          }
+        } else {
+          console.log('Error: Unable to fetch Instagram media. Check the console logs for more details.');
+          m.reply('Ada yang error...');
+        }
+      } catch (error) {
+        console.error(error);
+        m.reply('Ada yang error...');
+      }
+      break;
+    
 
 
   case 'tiktokhd':
@@ -5174,13 +5240,11 @@ case 'tiktoknowm':
             fs.unlinkSync(`./${randomName}`);
           } else if (photos.length > 0) {
             if (photos.length === 1) {
-              // Send a normal image message if there's only one image
               await gss.sendMessage(m.chat, {
                 image: { url: photos[0].url },
                 caption: `*Title*: ${title}`
               }, { quoted: m });
             } else {
-              // Send a carousel if there are multiple images
               const createImage = async (url) => {
                 const { imageMessage } = await generateWAMessageContent({ image: { url }, jpegThumbnail: "" }, { upload: gss.waUploadToServer });
                 return imageMessage;
@@ -5210,7 +5274,6 @@ case 'tiktoknowm':
             m.reply('Error: No video or photos found in TikTok media.');
           }
     
-          // Fetch and send the TikTok audio
           if (result.music_info && result.music_info.url) {
             const audioUrl = result.music_info.url;
     
@@ -5256,7 +5319,6 @@ case 'twt':
       return;
     }
 
-    // Handle x.com URLs by replacing them with twitter.com
     const tweetUrl = text.includes('x.com') ? text.replace('x.com', 'twitter.com') : text;
 
     m.reply(mess.wait);
@@ -5271,7 +5333,6 @@ case 'twt':
 
     const result = await response.json();
 
-    // Log the API response for debugging
     console.log('API response:', result);
 
     if (!result || !result.BK9 || !result.BK9.found) {
@@ -5283,7 +5344,6 @@ case 'twt':
       throw new Error('No media found in tweet');
     }
 
-    // Prepare caption text
     const captionText = `*Author:* ${result.BK9.authorName} (@${result.BK9.authorUsername})
 *Date:* ${result.BK9.date}
 *Likes:* ${result.BK9.likes}
@@ -5525,7 +5585,7 @@ case "gpt":
       const systemMessage = 'Aku adalah Ekushi-GPT Assisten virtual berbasis AI';
       const userQuery = args.join(' ');
   
-      await m.reply(mess.wait);
+      await doReact("💭");
   
       try {
           const response = await gpt4o(userQuery, systemMessage, m.key.remoteJid);
@@ -5534,6 +5594,7 @@ case "gpt":
   
           if (response && response.result) {
               m.reply(response.result);
+              await doReact("✅");
           } else {
               m.reply('Gaada respond yang valid dari GPT-4 :C.');
           }
@@ -6755,24 +6816,22 @@ case 'neko':
 
   let nsfwEnabled = true;
 
-// NNeko command
 case 'nsfw': {
   if (isBan) return m.reply(mess.banned);
   if (isBanChat) return m.reply(mess.bangc);
-  if (!m.isGroup) throw mess.group;
   if (!isAdmins) throw mess.admin;
   if (!args || args.length < 1) {
     gss.sendPoll(m.chat, "Choose NSFW Setting:", [`${prefix}nsfw on`, `${prefix}nsfw off`]);
   } else {
     const nsfwSetting = args[0].toLowerCase();
     if (nsfwSetting === "on") {
-      if (db.data.chats[m.chat]?.nsfwEnabled) return m.reply(`NSFW commands are already active`);
+      if (db.data.chats[m.chat]?.nsfwEnabled) return m.reply(`NSFW command sudah nyalah daritadi`);
       db.data.chats[m.chat] = { ...db.data.chats[m.chat], nsfwEnabled: true };
-      m.reply(`NSFW commands activated!`);
+      m.reply(`> \`ɴꜱꜰᴡ ᴄᴏᴍᴍᴀɴᴅ ᴅɪᴀᴋᴛɪꜰᴋᴀɴ\``);
     } else if (nsfwSetting === "off") {
-      if (!db.data.chats[m.chat]?.nsfwEnabled) return m.reply(`NSFW commands are already inactive`);
+      if (!db.data.chats[m.chat]?.nsfwEnabled) return m.reply(`NSFW command sudah mati daritadi`);
       db.data.chats[m.chat] = { ...db.data.chats[m.chat], nsfwEnabled: false };
-      m.reply(`NSFW commands deactivated!`);
+      m.reply(`> \`ɴꜱꜰᴡ ᴄᴏᴍᴍᴀɴᴅ ᴅɪᴍᴀᴛɪᴋᴀɴ\``);
     } else {
       gss.sendPoll(m.chat, "Choose NSFW Setting:", [`${prefix}nsfw on`, `${prefix}nsfw off`]);
     }

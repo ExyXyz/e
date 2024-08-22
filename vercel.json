@@ -1,12 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "http://152.42.208.53/dash/api/$1"
-    },
-    {
       "source": "/(.*)",
-      "destination": "http://152.42.208.53/dash/$1"
+      "destination": "http://152.42.208.53/dash"
     }
   ]
 }

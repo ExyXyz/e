@@ -211,7 +211,7 @@
 
     <script>
         function fetchStats() {
-            fetch('http://ekushi.xyz/stats/ekushi')
+            fetch('https://api.ekushi.xyz/stats/ekushi')
                 .then(response => response.json())
                 .then(data => {
                     console.log('Fetched Data:', data); // Debugging: log the fetched data

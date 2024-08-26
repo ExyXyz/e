@@ -2647,6 +2647,7 @@ case 'ytmp3':
 
         const docMessage = {
           document: { url: downloadLink },
+          jpegThumbnail: thumbnail,
           mimetype: 'audio/mpeg',
           fileName: title
         };
@@ -2816,7 +2817,6 @@ case 'stify':
               title: title,
               body: artist,
               mediaType: 1,
-              jpegThumbnail: thumbnail,
               thumbnailUrl: thumbnail,
               renderLargerThumbnail: false
             },
@@ -2825,6 +2825,7 @@ case 'stify':
   
         const docMessage = {
           document: { url: downloadLink },
+          jpegThumbnail: thumbnail,
           mimetype: 'audio/mpeg',
           fileName: title
         };

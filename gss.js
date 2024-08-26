@@ -2816,6 +2816,7 @@ case 'stify':
               title: title,
               body: artist,
               mediaType: 1,
+              jpegThumbnail: thumbnail,
               thumbnailUrl: thumbnail,
               renderLargerThumbnail: false
             },
@@ -5100,7 +5101,7 @@ case "openai":
   }
 
   const userQuery = args.join(' ');
-  const apiUrl = `https://api.ekushi.xyz/api/blackbox?q=${encodeURIComponent(userQuery)}`;
+  const apiUrl = `https://api.ekushi.xyz/api/blacbox?q=${encodeURIComponent(userQuery)}`;
 
   await doReact("🤔");
 

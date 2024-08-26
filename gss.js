@@ -2647,7 +2647,6 @@ case 'ytmp3':
 
         const docMessage = {
           document: { url: downloadLink },
-          jpegThumbnail: thumbnail,
           mimetype: 'audio/mpeg',
           fileName: title
         };
@@ -2825,7 +2824,6 @@ case 'stify':
   
         const docMessage = {
           document: { url: downloadLink },
-          jpegThumbnail: thumbnail,
           mimetype: 'audio/mpeg',
           fileName: title
         };
@@ -5102,7 +5100,7 @@ case "openai":
   }
 
   const userQuery = args.join(' ');
-  const apiUrl = `https://api.ekushi.xyz/api/crplus?q=${encodeURIComponent(userQuery)}`;
+  const apiUrl = `https://api.ekushi.xyz/api/blackbox?q=${encodeURIComponent(userQuery)}`;
 
   await doReact("🤔");
 
